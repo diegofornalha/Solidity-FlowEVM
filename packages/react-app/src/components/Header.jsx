@@ -1,7 +1,6 @@
 import React from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { chakra, useColorModeValue, Box, Flex, HStack, Spacer } from "@chakra-ui/react";
-import { Account } from "./index";
 import { USER_ROLES } from "../helpers/constants";
 import { ENVIRONMENT } from "../constants";
 import useCustomColorModes from "../hooks/useCustomColorModes";
@@ -35,21 +34,6 @@ export default function Header({
       px={{ base: 4, lg: 8 }}
       h={{ base: userIsRegistered ? "120px" : "80px", lg: "80px" }}
     >
-      {ENVIRONMENT !== "production" && (
-        <Box
-          color="blackAlpha.500"
-          pos="fixed"
-          p="2px"
-          fontSize={14}
-          w="100%"
-          bgColor="yellow.200"
-          left={0}
-          textAlign="center"
-          zIndex="10"
-        >
-          Working on a {ENVIRONMENT} environment.
-        </Box>
-      )}
       <Flex
         align={{ base: userIsRegistered ? "start" : "center", lg: "center" }}
         h="full"
@@ -131,22 +115,6 @@ export default function Header({
           )}
         </HStack>
         <Spacer />
-        <Box mt={{ base: userIsRegistered ? 3 : 0, lg: 0 }}>
-          <Account
-            address={address}
-            connectText="Connect Wallet"
-            ensProvider={mainnetProvider}
-            isWalletConnected={isSignerProviderConnected}
-            loadWeb3Modal={loadWeb3Modal}
-            logoutOfWeb3Modal={() => {
-              logoutOfWeb3Modal();
-              setUserRole(null);
-            }}
-            setUserRole={setUserRole}
-            userProvider={userProvider}
-            userRole={userRole}
-          />
-        </Box>
       </Flex>
     </Box>
   );

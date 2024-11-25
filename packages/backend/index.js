@@ -46,15 +46,15 @@ app.get("/builders", async (req, res) => {
   res.status(200).send(builders);
 });
 
-// TODO It looks like this route is the same as /user,
-// but /user handles 404 better
+// TODO Parece que esta rota é a mesma que /user,
+// mas /user lida melhor com o erro 404
 app.get("/builders/:builderAddress", async (req, res) => {
   const builderAddress = req.params.builderAddress;
   console.log(`/builders/${builderAddress}`);
 
   const builder = await db.findUserByAddress(builderAddress);
   if (!builder.exists) {
-    res.status(404).send("User doesn't exist");
+    res.status(404).send("Usuário não existe");
     return;
   }
 
@@ -73,7 +73,9 @@ app.post("/builders/update-socials", withAddress, async (request, response) => {
   };
 
   if (!verifySignature(signature, verifyOptions)) {
-    response.status(401).send(" 🚫 Signature verification failed! Please reload and try again. Sorry! 😅");
+    response
+      .status(401)
+      .send(" 🚫 Verificação de assinatura falhou! Por favor, recarregue e tente novamente. Desculpe! 😅");
     return;
   }
 
@@ -94,7 +96,9 @@ app.post("/builders/update-reached-out", withRole("admin"), async (request, resp
   };
 
   if (!verifySignature(signature, verifyOptions)) {
-    response.status(401).send(" 🚫 Signature verification failed! Please reload and try again. Sorry! 😅");
+    response
+      .status(401)
+      .send(" 🚫 Verificação de assinatura falhou! Por favor, recarregue e tente novamente. Desculpe! 😅");
     return;
   }
 
@@ -102,11 +106,11 @@ app.post("/builders/update-reached-out", withRole("admin"), async (request, resp
   response.status(200).send(updatedUser);
 });
 
-// Builder login.
+// Login do construtor
 app.post("/sign", async (request, response) => {
   const neededBodyProps = ["address", "signature"];
   if (neededBodyProps.some(prop => request.body[prop] === undefined)) {
-    response.status(400).send(`Missing required body property. Required: ${neededBodyProps.join(", ")}`);
+    response.status(400).send(`Propriedade obrigatória ausente no body. Necessário: ${neededBodyProps.join(", ")}`);
     return;
   }
 
@@ -118,7 +122,9 @@ app.post("/sign", async (request, response) => {
   };
 
   if (!verifySignature(signature, verifyOptions)) {
-    response.status(401).send(" 🚫 Signature verification failed! Please reload and try again. Sorry! 😅");
+    response
+      .status(401)
+      .send(" 🚫 Verificação de assinatura falhou! Por favor, recarregue e tente novamente. Desculpe! 😅");
     return;
   }
   let user = await db.findUserByAddress(userAddress);
@@ -131,7 +137,7 @@ app.post("/sign", async (request, response) => {
     user = await db.findUserByAddress(userAddress);
 
     trackPlausibleEvent("signupSRE", {}, request); // INFO: async, no await here
-    console.log("New user created: ", userAddress);
+    console.log("Novo usuário criado: ", userAddress);
   }
 
   response.json(user.data);
@@ -142,11 +148,11 @@ app.get("/user", async (request, response) => {
   console.log(`/user`, address);
   const user = await db.findUserByAddress(address);
   if (!user.exists) {
-    response.status(404).send("User doesn't exist");
+    response.status(404).send("Usuário não existe");
     return;
   }
 
-  console.log("Retrieving existing user: ", address);
+  console.log("Recuperando usuário existente: ", address);
   response.json(user.data);
 });
 
@@ -163,25 +169,25 @@ app.post("/challenges/run-test", withRole("admin"), async (request, response) =>
 });
 
 /**
- * Update the user challenges while checking trigger logic.
+ * Atualiza os desafios do usuário verificando a lógica de gatilho.
  */
 const updateUserChallenges = async (user, challengeData) => {
   await db.updateUser(user.data.id, challengeData);
-  // Trigger logic. Previous (Join the BG automation) => Now manual.
+  // Lógica de gatilho. Anterior (Juntar-se à automação BG) => Agora manual.
 };
 
 app.post("/challenges", withAddress, async (request, response) => {
   const { challengeId, deployedUrl, contractUrl, signature } = request.body;
-  // TODO Maybe make this needed props a middleware. Same for headers
+  // TODO Talvez transformar essas propriedades necessárias em um middleware. O mesmo para headers
   const neededBodyProps = ["challengeId", "deployedUrl", "contractUrl", "signature"];
   if (neededBodyProps.some(prop => request.body[prop] === undefined)) {
-    response.status(400).send(`Missing required body property. Required: ${neededBodyProps.join(", ")}`);
+    response.status(400).send(`Propriedade obrigatória ausente no body. Necessário: ${neededBodyProps.join(", ")}`);
     return;
   }
   const address = request.address;
   const neededHeaders = ["address"];
   if (neededHeaders.some(prop => request.headers[prop] === undefined)) {
-    response.status(400).send(`Missing required headers. Required: ${neededHeaders.join(", ")}`);
+    response.status(400).send(`Cabeçalhos obrigatórios ausentes. Necessário: ${neededHeaders.join(", ")}`);
     return;
   }
   console.log("POST /challenges: ", address, challengeId, deployedUrl, contractUrl);
@@ -205,20 +211,22 @@ app.post("/challenges", withAddress, async (request, response) => {
   }
 
   if (!isSignatureValid) {
-    response.status(401).send(" 🚫 Signature verification failed! Please reload and try again. Sorry! 😅");
+    response
+      .status(401)
+      .send(" 🚫 Verificação de assinatura falhou! Por favor, recarregue e tente novamente. Desculpe! 😅");
     return;
   }
 
   const user = await db.findUserByAddress(address);
   if (!user.exists) {
-    response.status(404).send("User not found!");
+    response.status(404).send("Usuário não encontrado!");
     return;
   }
 
   const existingChallenges = user.data.challenges ?? {};
   const existingReviewComment = existingChallenges[challengeId]?.reviewComment;
-  // Overriding for now. We could support an array of submitted challenges.
-  // ToDo. Extract challenge status (ENUM)
+  // Sobrescrevendo por enquanto. Poderíamos suportar um array de desafios enviados.
+  // ToDo. Extrair status do desafio (ENUM)
   existingChallenges[challengeId] = {
     status: "SUBMITTED",
     contractUrl,
@@ -243,8 +251,8 @@ app.post("/challenges", withAddress, async (request, response) => {
 
   // ToDo. Use services/autograder
   if (autogradingEnabled && isAutogradingEnabledForChallenge(challengeId)) {
-    // Auto-grading
-    console.log("Calling auto-grader");
+    // Auto-avaliação
+    console.log("Chamando auto-avaliador");
 
     const challengeIndex = getChallengeIndexFromChallengeId(challengeId);
     const contractUrlObject = new URL(contractUrl);
@@ -346,7 +354,7 @@ app.patch("/challenges", withRole("admin"), async (request, response) => {
   const address = request.address;
   const neededHeaders = ["address"];
   if (neededHeaders.some(prop => request.headers[prop] === undefined)) {
-    response.status(400).send(`Missing required headers. Required: ${neededHeaders.join(", ")}`);
+    response.status(400).send(`Cabeçalhos obrigatórios ausentes. Necessário: ${neededHeaders.join(", ")}`);
     return;
   }
 
@@ -359,12 +367,14 @@ app.patch("/challenges", withRole("admin"), async (request, response) => {
   };
 
   if (!verifySignature(signature, verifyOptions)) {
-    response.status(401).send(" 🚫 Signature verification failed! Please reload and try again. Sorry! 😅");
+    response
+      .status(401)
+      .send(" 🚫 Verificação de assinatura falhou! Por favor, recarregue e tente novamente. Desculpe! 😅");
     return;
   }
 
   if (newStatus !== "ACCEPTED" && newStatus !== "REJECTED") {
-    response.status(400).send("Invalid status");
+    response.status(400).send("Status inválido");
   } else {
     await setChallengeStatus(userAddress, address, challengeId, newStatus, comment, signature);
     response.sendStatus(200);
@@ -459,10 +469,10 @@ app.post("/api/frame", (req, res) => {
   }
 });
 
-// If nothing processed the request, return 404
+// Se nenhuma rota processou a requisição, retorna 404
 app.use((req, res) => {
-  console.log(`Request to ${req.path} resulted in 404`);
-  res.status(404).json({ error: "not found" });
+  console.log(`Requisição para ${req.path} resultou em 404`);
+  res.status(404).json({ error: "Não encontrado" });
 });
 
 const PORT = process.env.PORT || 49832;
